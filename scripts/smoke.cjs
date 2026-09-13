@@ -1,0 +1,170 @@
+const { _electron: electron } = require('playwright');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const http = require('node:http');
+
+(async () => {
+  const root = path.resolve(__dirname, '..');
+  const artifacts = path.join(root, 'artifacts');
+  fs.mkdirSync(artifacts, { recursive: true });
+  const server = http.createServer((req, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    if (req.url === '/second') return res.end('<html><title>Second page</title><main><h1>A second destination</h1><p>Navigation works.</p></main></html>');
+    res.end('<html><title>Orbital Observatory</title><main><h1>Exploring the universe</h1><p>Stars form in clouds of gas and dust. A nebula is a stellar nursery.</p><input value="do not attach secret form contents"><a href="/second">Next page</a><a href="/second" target="_blank">New tab link</a></main></html>');
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const url = `http://127.0.0.1:${server.address().port}`;
+  let app;
+  const errors = [];
+  try {
+    const environment = { ...process.env, OPENAI_API_KEY: '', JARVIS_TEST: '1', JARVIS_PROFILE: path.join(artifacts, `test-profile-${Date.now()}`) };
+    delete environment.ELECTRON_RUN_AS_NODE;
+    app = await electron.launch({ args: [root], env: environment, timeout: 30000 });
+    const page = await app.firstWindow();
+    page.on('crash', () => console.log('Renderer crashed:', page.url()));
+    page.on('pageerror', error => { errors.push(error.message); console.log('Renderer error:', error.message); });
+    page.on('console', message => { if (message.type() === 'error') console.log('UI error:', message.text()); });
+    await page.waitForSelector('#greeting');
+    await page.waitForFunction(() => document.querySelectorAll('.tab').length === 1);
+    assert.match(await page.title(), /JARVIS/);
+    assert.match(await page.locator('#home-ai-state').innerText(), /AI not connected/);
+    await page.locator('.home-ready [data-panel="guide"]').click();
+    assert.match(await page.locator('#modal-content').innerText(), /Your browser, in three steps/);
+    await page.locator('#modal-content [data-guide-action="browse"]').click();
+    assert.equal(await page.locator('#home-query').evaluate(el => el === document.activeElement), true);
+    await page.keyboard.press('Escape');
+    await page.screenshot({ path: path.join(artifacts, 'jarvis-home.png') });
+
+    await page.locator('#home-query').fill(url);
+    await page.locator('#home-search button').click();
+    await page.waitForFunction(() => document.querySelector('.tab-title')?.textContent === 'Orbital Observatory');
+    const isolation = await app.evaluate(async ({ webContents }) => {
+      const remote = webContents.getAllWebContents().find(w => w.getTitle() === 'Orbital Observatory');
+      return remote.executeJavaScript('({ node: typeof process, bridge: typeof window.jarvis, title: document.title })');
+    });
+    assert.deepEqual(isolation, { node: 'undefined', bridge: 'undefined', title: 'Orbital Observatory' });
+    const attachedPage = await page.evaluate(() => window.jarvis.invoke('page'));
+    assert.match(attachedPage.text, /stellar nursery/);
+    assert.doesNotMatch(attachedPage.text, /secret form contents/);
+
+    await page.locator('#bookmark-page').click();
+    await page.waitForFunction(() => document.querySelector('#bookmark-count').textContent === '1');
+    await page.locator('[data-panel="bookmarks"]').click();
+    await page.waitForSelector('#collection-list');
+    assert.match(await page.locator('#collection-list').innerText(), /Orbital Observatory/);
+    const hiddenForModal = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].contentView.children.find(v => v.webContents?.getURL().startsWith('http://127.0.0.1'))?.getVisible());
+    assert.equal(hiddenForModal, false);
+    await page.locator('#modal-close').click();
+
+    await page.locator('#address').fill(url + '/second');
+    await page.locator('#address').press('Enter');
+    await page.waitForFunction(() => document.querySelector('.tab-title')?.textContent === 'Second page');
+    await page.locator('#back').click();
+    await page.waitForFunction(() => document.querySelector('.tab-title')?.textContent === 'Orbital Observatory');
+    await page.locator('#forward').click();
+    await page.waitForFunction(() => document.querySelector('.tab-title')?.textContent === 'Second page');
+
+    await page.locator('#address').fill('jarvis');
+    await page.locator('#address').press('Enter');
+    await page.waitForFunction(() => !document.querySelector('#home').classList.contains('hidden'));
+    assert.match(await page.locator('#recent-sites').innerText(), /Second page/);
+
+    await page.locator('#new-tab').click();
+    await page.waitForFunction(() => document.querySelector('#tab-count').textContent === '02');
+    await page.locator('#chat-input').fill('new tab');
+    await page.locator('#chat-input').press('Enter');
+    await page.waitForFunction(() => document.querySelector('#tab-count').textContent === '03');
+    await page.waitForFunction(() => document.querySelector('#messages').textContent.includes('fresh tab'));
+    await page.locator('#chat-input').fill('Explain how gravity works');
+    await page.locator('#chat-input').press('Enter');
+    await page.waitForFunction(() => document.querySelector('#messages').textContent.includes('Connect free AI'));
+
+    await page.locator('[data-panel="settings"]').click();
+    assert.match(await page.locator('#connect-free-ai').innerText(), /Connect free AI/);
+    assert.equal(await page.locator('#setting-model').inputValue(), 'openrouter/free');
+    assert.equal(await page.locator('#voice-button').isDisabled(), true);
+    await page.locator('#setting-name').fill('Commander');
+    await page.locator('#setting-search').selectOption('google');
+    await page.locator('#save-settings').click();
+    await page.waitForFunction(() => document.querySelector('#greeting').textContent.includes('Commander'));
+    const saved = await page.evaluate(() => window.jarvis.invoke('state'));
+    assert.equal(saved.settings.searchEngine, 'google');
+    assert.ok(saved.history.length >= 2);
+    assert.ok(!JSON.stringify(saved).includes('OPENAI_API_KEY'));
+    const badNav = await page.evaluate(() => window.jarvis.invoke('navigate', { url: 'file:///C:/Windows' }));
+    assert.match(badNav.error, /http/);
+
+    await page.locator('[data-panel="training"]').click();
+    await page.waitForSelector('#toggle-screen-learning');
+    assert.match(await page.locator('#modal-content').innerText(), /What JARVIS has learned/);
+    const startedLearning = await page.evaluate(() => window.jarvis.invoke('screen-learning', { enabled: true, intervalMs: 15000 }));
+    assert.equal(startedLearning.enabled, true);
+    await page.waitForSelector('#learning-hud:not(.hidden)', { timeout: 10000 });
+    await page.locator('#modal-close').click();
+    await page.screenshot({ path: path.join(artifacts, 'jarvis-learning.png') });
+    const liveLearning = await page.evaluate(() => window.jarvis.invoke('state'));
+    assert.equal(liveLearning.screenLearning, true);
+    assert.equal(liveLearning.screenLearningInfo.source, 'Entire desktop');
+    assert.match(await page.locator('#learning-hud').innerText(), /Entire desktop|CAPTURE READY|LIVE LEARNING/);
+    assert.equal(await page.locator('#learning-hud-connect').isVisible(), true);
+    await page.evaluate(() => window.jarvis.invoke('screen-learning', { enabled: false }));
+    await page.waitForFunction(() => document.querySelector('#learning-hud')?.classList.contains('hidden'));
+
+    await page.locator('#clear-chat').click();
+    await page.locator('[data-panel="settings"]').click();
+    await page.locator('#setting-name').fill('Max');
+    await page.locator('#save-settings').click();
+    const all = await page.evaluate(() => window.jarvis.invoke('state'));
+    for (const tab of all.tabs.filter(t => t.id !== all.activeId)) await page.evaluate(id => window.jarvis.invoke('close-tab', { id }), tab.id);
+    // Address-bar suggestions and the in-browser starter feature builder.
+    await page.locator('#address').focus();
+    await page.waitForSelector('#address-suggestions .url-suggestion');
+    assert.match(await page.locator('#address-suggestions').innerText(), /Google|YouTube|JARVIS/);
+    await page.keyboard.press('Escape');
+    await page.locator('#chat-input').fill('build me a revision planner');
+    await page.locator('#chat-input').press('Enter');
+    await page.waitForSelector('#modal-content .builder-form');
+    assert.equal(await page.locator('#feature-request').inputValue(), 'build me a revision planner');
+    assert.match(await page.locator('#generate-feature').innerText(), /Connect free AI to build/);
+    await page.locator('#modal-close').click();
+    await page.locator('.start-cards [data-guide-action="notes"]').click();
+    await page.waitForSelector('#feature-preview-section:not(.hidden)');
+    await page.waitForFunction(() => document.querySelector('#feature-preview')?.src.startsWith('jarvis-tool://'));
+    assert.match(await page.locator('#feature-preview-name').innerText(), /Quick notes/);
+    const note = 'Remember to explore the universe';
+    const preview = page.frameLocator('#feature-preview');
+    await preview.locator('#notes').fill(note);
+    await preview.locator('#count').filter({ hasText: '5 words' }).waitFor();
+    await page.locator('#install-feature').click();
+    await page.waitForSelector('#modal-content.running-tool');
+    const featureState = await page.evaluate(() => window.jarvis.invoke('state'));
+    assert.equal(featureState.features.length, 1);
+    assert.match(await page.locator('#feature-preview-name').innerText(), /Quick notes/);
+    const toolId = featureState.features[0].id;
+    await page.waitForFunction(async ({ id, text }) => (await window.jarvis.invoke('feature-data', { id }))?.text === text, { id: toolId, text: note });
+    assert.equal(await preview.locator('#notes').inputValue(), note);
+    await preview.locator('#notes').fill('A saved thought');
+    await page.waitForFunction(async id => (await window.jarvis.invoke('feature-data', { id }))?.text === 'A saved thought', toolId);
+    await page.locator('#modal-close').click();
+    await page.locator(`[data-tool-id="${toolId}"]`).click();
+    await preview.locator('#notes').waitFor();
+    await page.waitForFunction(() => document.querySelector('#feature-feedback')?.textContent.includes('saved on this computer'));
+    assert.equal(await preview.locator('#notes').inputValue(), 'A saved thought');
+    await page.locator('#remove-feature').click();
+    await page.locator('#remove-feature').click();
+    await page.waitForFunction(async () => (await window.jarvis.invoke('state')).features.length === 0);
+    await page.waitForFunction(() => document.querySelector('#modal-backdrop')?.classList.contains('hidden'));
+    await page.locator('#toast').waitFor({ state: 'hidden', timeout: 10000 });
+    await page.screenshot({ path: path.join(artifacts, 'jarvis-home.png') });
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1100, 720));
+    await page.waitForFunction(() => window.innerWidth <= 1100);
+    await page.screenshot({ path: path.join(artifacts, 'jarvis-compact.png') });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+    assert.deepEqual(errors, []);
+    console.log('PASS: browsing, history and suggestions, JARVIS home shortcut, guide actions, local commands, feature preview/install/persistent notes, settings, renderer isolation, page extraction, AI setup handling, and compact layout.');
+  } finally {
+    if (app) await app.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+})().catch(error => { console.error(error); process.exitCode = 1; });

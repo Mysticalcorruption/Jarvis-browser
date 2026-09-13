@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; media-src 'self' blob:; object-src 'none'; frame-src jarvis-tool:; base-uri 'none'; form-action 'none'">
+  <title>JARVIS — Your personal browser</title>
+  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="air.css"><link rel="icon" href="jarvis-logo.png">
+  <script src="icons.js" defer></script>
+  <script src="guide.js" defer></script>
+  <script src="learning-hud.js" defer></script>
+  <script src="builder.js" defer></script>
+  <script src="school-library.js" defer></script>
+  <script src="renderer.js" defer></script>
+</head>
+<body>
+  <div id="boot-splash" aria-hidden="true"><div class="boot-grid"></div><div class="boot-orbit"></div><img src="jarvis-logo.png" alt=""><div class="boot-wordmark">J<span>A</span>RVIS</div><div class="boot-status"><i></i> INITIALISING PERSONAL INTELLIGENCE</div></div>
+  <header class="titlebar">
+    <div class="brand"><img class="brand-logo" src="jarvis-logo.png" alt="JARVIS"><span>J A R V I S</span><span class="brand-divider"></span><span class="brand-caption">PERSONAL BROWSER</span></div>
+    <div class="top-tabs"><nav id="tabs" aria-label="Open tabs" class="tabs"></nav><button id="new-tab" aria-label="New tab" title="New tab · Ctrl T" data-icon="plus"></button><span id="tab-count" class="hidden">01</span></div><div class="titlebar-right"><span class="system-label"><i class="status-dot"></i> BROWSER READY</span><div class="window-controls"><button data-command="minimize" aria-label="Minimize" data-icon="minus"></button><button data-command="maximize" aria-label="Maximize" data-icon="square"></button><button data-command="close-window" class="window-close" aria-label="Close browser" data-icon="close"></button></div></div>
+  </header>
+
+  <aside class="sidebar">
+    <div class="space-label"><span class="space-avatar">M</span><div><strong>My space</strong><small>PERSONAL SPACE</small></div><span class="tiny-cyan" data-icon="chevrons"></span></div>
+    <div class="sidebar-line"></div>
+    <div class="section-label">YOUR LIBRARY</div>
+    <button class="side-link" data-panel="bookmarks"><span data-icon="bookmark"></span>Bookmarks<span class="side-count" id="bookmark-count">0</span></button>
+    <button class="side-link" data-panel="history"><span data-icon="history"></span>History</button>
+    <button class="side-link" data-panel="downloads"><span data-icon="download"></span>Downloads</button>
+    <div class="sidebar-line"></div>
+    <div class="section-label">YOUR WORKSPACE</div>
+<button class="side-link school-link" data-panel="school"><span data-icon="folder"></span>School library</button>
+    <nav id="feature-tools" aria-label="Your installed tools"></nav>
+    <div class="sidebar-spacer"></div>
+    <button class="companion-card" id="companion-toggle"><span class="mini-orb"></span><span><strong>Your copilot</strong><small>Always within reach</small></span><span data-icon="arrow-up-right"></span></button>
+    <button class="side-link" data-panel="guide"><span data-icon="bulb"></span>How to use JARVIS</button>
+    <button class="side-link" data-panel="training"><span data-icon="sparkles"></span>Train my JARVIS</button>
+    <button class="side-link emergency-link" data-emergency-stop><span data-icon="stop"></span>Emergency stop</button>
+    <button class="side-link settings-link" data-panel="settings"><span data-icon="settings"></span>Settings<span class="version">v1.2</span></button>
+    <div class="profile"><span class="profile-avatar">M</span><div><strong id="profile-name">Max</strong><small>This is your space.</small></div><i class="status-dot"></i></div>
+  </aside>
+
+  <div class="browser-shell">
+    <div class="toolbar">
+      <div class="navigation-controls"><button id="back" aria-label="Go back" title="Back · Alt Left" data-icon="arrow-left"></button><button id="forward" aria-label="Go forward" title="Forward · Alt Right" data-icon="arrow-right"></button><button id="reload" aria-label="Reload page" title="Reload · Ctrl R" data-icon="refresh"></button></div>
+      <form class="address-form" id="address-form"><span id="address-icon" data-icon="shield"></span><input id="address" aria-label="Address bar" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="address-suggestions" placeholder="Search or enter a web address" autocomplete="off" spellcheck="false"><button type="button" id="bookmark-page" title="Bookmark page · Ctrl D" aria-label="Bookmark page" data-icon="star"></button><div id="address-suggestions" class="url-suggestions hidden" role="listbox" aria-label="Suggested websites"></div></form>
+      <button id="home-button" title="Home" aria-label="Home" data-icon="home"></button><span class="toolbar-divider"></span><button id="assistant-toggle" class="assistant-toggle active" title="Toggle JARVIS · Ctrl K" aria-label="Toggle assistant" data-icon="sparkles"></button>
+    </div>
+
+    <div class="content-row">
+      <main class="main-content" id="main-content">
+        <div id="page-viewport" aria-label="Web page"></div>
+        <section class="home" id="home">
+          <div class="home-topline"><span><i class="status-dot"></i> YOUR PERSONAL BROWSER</span><time id="today"></time></div>
+          <div class="greeting"><h1 id="greeting">Welcome, Max<span>.</span></h1><p>A little clarity. A world of possibility.</p></div>
+          <div class="home-ready"><span id="home-ai-state">Browsing works now · AI not connected</span><button data-panel="guide">Show me how <span data-icon="arrow-up-right"></span></button></div>
+          <div class="core-scene" aria-hidden="true">
+            <div class="core-orbit orbit-one"></div><div class="core-orbit orbit-two"></div><div class="orbit-mark mark-one"></div><div class="orbit-mark mark-two"></div>
+            <div class="core-rule rule-left"><span>PERSONAL<br>INTELLIGENCE</span></div><div class="core-rule rule-right"><span>READY FOR<br>YOUR NEXT MOVE</span></div>
+            <div class="core"><div class="core-ring ring-one"></div><div class="core-ring ring-two"></div><div class="core-ring ring-three"></div><canvas id="core-canvas" width="440" height="440"></canvas><div class="core-wordmark">J<span>A</span>RVIS<small>AT YOUR SERVICE</small></div></div>
+            <div class="core-caption"><span></span> A LITTLE MORE SUPERHUMAN <span></span></div>
+          </div>
+          <div class="home-search-wrap"><form class="home-search" id="home-search"><span data-icon="search"></span><input id="home-query" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="home-suggestions" aria-label="Search the web" placeholder="Search or enter a website, e.g. youtube.com" autocomplete="off"><kbd>Ctrl L</kbd><button type="submit" aria-label="Search" data-icon="arrow-right"></button></form><div id="home-suggestions" class="url-suggestions hidden" role="listbox" aria-label="Suggested websites"></div></div>
+          <div class="search-hint">Search the web, enter a URL, or <button id="ask-from-home">ask JARVIS <span data-icon="sparkles"></span></button></div>
+          <div class="section-heading" id="popular-heading"><span>COMMON WEBSITES</span><span class="heading-line"></span></div>
+          <div class="quick-links" id="quick-links"></div>
+          <section class="recent-section" id="recent-section"><div class="section-heading"><span>RECENTLY VISITED</span><span class="heading-line"></span><button data-panel="history">View all <span data-icon="arrow-up-right"></span></button></div><div class="recent-sites" id="recent-sites"></div></section>
+          <div class="feature-cards">
+            <button class="feature-card" id="summarize-home"><span class="feature-icon" data-icon="scan"></span><span><strong>Less reading. More knowing.</strong><small>Let JARVIS break down any page.</small></span><span class="feature-arrow" data-icon="arrow-up-right"></span></button>
+            <button class="feature-card school-home-card" data-panel="school"><span class="feature-icon" data-icon="folder"></span><span><strong>Your schoolwork, beautifully organised.</strong><small>Add documents. Find your focus.</small></span><span class="feature-arrow" data-icon="arrow-up-right"></span></button>
+          </div>
+          <div class="home-bottom"><span><b id="home-tab-stat">01</b> OPEN TABS</span><span><b id="home-bookmark-stat">00</b> SAVED PAGES</span><span><i class="status-dot"></i> MADE FOR YOU</span></div>
+        </section>
+        <section class="page-error hidden" id="page-error"><span data-icon="globe"></span><h2>A small detour.</h2><p id="page-error-message"></p><button class="primary" id="retry-page">Try again <span data-icon="refresh"></span></button><button class="secondary" id="error-home">Return home</button></section>
+        <div class="find-bar hidden" id="find-bar"><input id="find-input" aria-label="Find on page" placeholder="Find on page"><span id="find-count"></span><button id="find-prev" aria-label="Previous match" data-icon="chevron-up"></button><button id="find-next" aria-label="Next match" data-icon="chevron-down"></button><button id="find-close" aria-label="Close find" data-icon="close"></button></div>
+      </main>
+
+      <aside class="assistant-panel" id="assistant-panel">
+        <div class="assistant-header"><img class="assistant-logo brand-icon" src="jarvis-logo.png" alt=""><div><strong>JARVIS</strong><small>YOUR PERSONAL COPILOT</small></div><button id="clear-chat" aria-label="New conversation" title="New conversation" data-icon="message-plus"></button></div>
+        <button class="connection-strip" id="connection-status"><span class="connection-dot"></span><span id="connection-text">AI connection needed</span><span data-icon="arrow-up-right"></span></button>
+        <div class="chat-scroll" id="chat-scroll">
+          <div class="assistant-welcome" id="assistant-welcome"><div class="welcome-symbol" data-icon="sparkles"></div><h2 id="assistant-welcome-title">Start with a browser command.</h2><p id="assistant-welcome-copy">Try “open YouTube” or “new tab”. Connect AI for questions, summaries and new tools.</p></div>
+          <div id="messages" role="log" aria-live="polite" aria-label="Conversation"></div>
+        </div>
+        <div class="composer-area"><div class="context-row"><button id="attach-page" class="context-button" aria-pressed="false"><span data-icon="link"></span><span>Include this page</span></button><button id="speak-toggle" class="speak-button" aria-label="Toggle spoken replies" title="Read replies aloud" data-icon="volume"></button></div><form class="composer" id="chat-form"><textarea id="chat-input" rows="2" placeholder="Ask anything, or give a command…" aria-label="Message JARVIS" maxlength="12000"></textarea><div class="composer-bottom"><span id="composer-hint">AT YOUR SERVICE</span><div><button type="button" id="voice-button" aria-label="Record voice message" title="Record voice message" data-icon="mic"></button><button type="submit" class="send-button" id="send-message" aria-label="Send message" data-icon="arrow-up"></button></div></div></form><div class="assistant-footnote" id="assistant-footnote">Page content stays private until you include it.</div></div>
+      </aside>
+    </div>
+  </div>
+
+  <footer class="statusbar"><span><span class="status-dot"></span><span id="status-text">All systems ready</span></span><span class="status-center">YOUR BROWSER. YOUR RULES.</span><span><span data-icon="command"></span><span>Ctrl K to talk to JARVIS</span></span></footer>
+
+  <div class="modal-backdrop hidden" id="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><div><span class="eyebrow">YOUR PERSONAL SPACE</span><h2 id="modal-title">Settings</h2></div><button id="modal-close" aria-label="Close dialog" data-icon="close"></button></div><div id="modal-content"></div></section></div>
+  <div class="toast hidden" id="toast" role="status"></div>
+</body>
+</html>

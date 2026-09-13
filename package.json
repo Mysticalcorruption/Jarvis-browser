@@ -1,0 +1,21 @@
+{
+  "name": "jarvis-browser",
+  "version": "1.0.0",
+  "description": "A personal desktop browser with a JARVIS-inspired AI companion.",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/core.test.cjs tests/school-library.test.cjs",
+    "test:browser": "node scripts/redesign-smoke.cjs",
+    "package": "node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "44.3.0",
+    "playwright": "^1.58.2"
+  },
+  "dependencies": {
+    "mammoth": "^1.12.3",
+    "pdf-parse": "^2.4.5"
+  }
+}
