@@ -51,3 +51,4 @@ body[data-background="plain"] .home{background:linear-gradient(145deg,#1c2b33,#1
 @keyframes jarvis-pulse{0%,100%{transform:scale(1);opacity:.72}50%{transform:scale(1.025);opacity:1}}
 @keyframes jarvis-blink{0%,100%{opacity:.45}50%{opacity:1}}
 @media(prefers-reduced-motion:reduce){.home:after,.home-topline::before{animation:none}}
+.download-home-card{border-color:#b9e8d632;background:linear-gradient(110deg,#b0e4d41c,#9fc4db0b)}.download-home-card .feature-icon{color:#b8e9d8}
